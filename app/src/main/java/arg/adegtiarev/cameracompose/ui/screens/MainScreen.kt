@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.camera.compose.CameraXViewfinder
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,7 +14,9 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -26,8 +29,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,6 +50,15 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 fun MainScreen(
     viewModel: MainViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val cameraMode by viewModel.cameraMode.collectAsStateWithLifecycle()
+
+    val buttonColor = if (cameraMode == CameraMode.VIDEO) {
+        if (uiState.isRecording) Color.Red else Color.Red.copy(alpha = 0.5f)
+    } else {
+        Color.White
+    }
+
     // Bind camera to lifecycle
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
@@ -88,12 +105,68 @@ fun MainScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                CaptureButton(
-                    onClick = { viewModel.onCaptureClick() },
+                if (uiState.isRecording) {
+                    RecordTimer(
+                        seconds = uiState.durationSeconds,
+                        isPaused = uiState.isPaused,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 32.dp)
+                    )
+                }
+
+                Column(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 48.dp)
-                )
+                        .padding(bottom = 48.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // 1. Переключатель режимов
+                    Row(
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CameraMode.entries.forEach { mode ->
+                            val isSelected = cameraMode == mode
+                            Text(
+                                text = mode.name,
+                                color = Color.White,
+                                modifier = Modifier
+                                    .alpha(if (isSelected) 1f else 0.5f) // Неактивные режимы полупрозрачные
+                                    .clickable { viewModel.setCameraMode(mode) }
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 1. Левый балласт для симметрии (вес 1)
+                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            // Здесь пусто, но это место «держит» левый край
+                        }
+
+                        // 2. Центр (без веса, фиксированный размер)
+                        CaptureButton(
+                            onClick = { viewModel.onCaptureClick() },
+                            color = buttonColor
+                        )
+
+                        // 3. Правая часть (вес 1)
+                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            if (uiState.isRecording) {
+                                PauseButton(
+                                    isPaused = uiState.isPaused,
+                                    onClick = {
+                                        if (uiState.isPaused) viewModel.resumeRecording()
+                                        else viewModel.pauseRecording()
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -156,8 +229,111 @@ fun CaptureButton(
     }
 }
 
+@Composable
+fun PauseButton(
+    isPaused: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.9f else 1f,
+        label = "scale"
+    )
+
+    Box(
+        modifier = modifier
+            .scale(scale)
+            .size(56.dp)
+            .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+            .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        if (isPaused) {
+            // Play Icon (Resume) - Drawn manually
+            Canvas(modifier = Modifier.size(20.dp)) {
+                val path = Path().apply {
+                    moveTo(0f, 0f)
+                    lineTo(size.width, size.height / 2)
+                    lineTo(0f, size.height)
+                    close()
+                }
+                drawPath(path, Color.White)
+            }
+        } else {
+            // Pause Icon - Drawn manually
+            Canvas(modifier = Modifier.size(20.dp)) {
+                val barWidth = size.width / 3
+                val cornerRadius = 2.dp.toPx()
+
+                drawRoundRect(
+                    color = Color.White,
+                    topLeft = Offset(0f, 0f),
+                    size = Size(barWidth, size.height),
+                    cornerRadius = CornerRadius(cornerRadius)
+                )
+                drawRoundRect(
+                    color = Color.White,
+                    topLeft = Offset(size.width - barWidth, 0f),
+                    size = Size(barWidth, size.height),
+                    cornerRadius = CornerRadius(cornerRadius)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RecordTimer(
+    seconds: Int,
+    isPaused: Boolean,
+    modifier: Modifier = Modifier
+) {
+    // В Compose очень просто сделать мигание через анимацию,
+    // но для начала можно просто менять прозрачность
+    val alpha by animateFloatAsState(
+        targetValue = if (isPaused) 0.5f else 1f,
+        label = "timerAlpha"
+    )
+
+    val minutes = seconds / 60
+    val remainingSeconds = seconds % 60
+    // Форматируем строку как 00:00
+    val timeText = "%02d:%02d".format(minutes, remainingSeconds)
+
+    Text(
+        text = timeText,
+        color = Color.White,
+        modifier = modifier
+            .alpha(alpha)
+            .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 fun CaptureButtonPreview() {
     CaptureButton(color = Color.Red, onClick = {})
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF888888)
+@Composable
+fun PauseButtonPreview() {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        PauseButton(isPaused = false, onClick = {})
+        PauseButton(isPaused = true, onClick = {})
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF888888)
+@Composable
+fun RecordTimerPreview() {
+    RecordTimer(seconds = 120, isPaused = true)
 }

@@ -165,11 +165,11 @@ class CameraManager @Inject constructor(private val context: Context) : CameraRe
         currentRecording = null
     }
 
-    fun pauseRecording() {
+    override fun pauseRecording() {
         currentRecording?.pause()
     }
 
-    fun resumeRecording() {
+    override fun resumeRecording() {
         currentRecording?.resume()
     }
 }

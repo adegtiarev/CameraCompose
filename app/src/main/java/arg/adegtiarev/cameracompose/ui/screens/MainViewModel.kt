@@ -115,7 +115,26 @@ class MainViewModel @Inject constructor(
             } catch (e: Exception) {
                 _events.send(CameraEvent.Toast("Error: ${e.localizedMessage} ❌"))
             }
+        }
+    }
 
+    fun resumeRecording() {
+        viewModelScope.launch {
+            try {
+                cameraRepository.resumeRecording()
+            } catch (e: Exception) {
+                _events.send(CameraEvent.Toast("Video error: ${e.localizedMessage}"))
+            }
+        }
+    }
+
+    fun pauseRecording() {
+        viewModelScope.launch {
+            try {
+                cameraRepository.pauseRecording()
+            } catch (e: Exception) {
+                _events.send(CameraEvent.Toast("Video error: ${e.localizedMessage}"))
+            }
         }
     }
 

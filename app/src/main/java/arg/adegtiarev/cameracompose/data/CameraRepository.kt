@@ -19,4 +19,6 @@ interface CameraRepository {
     val recordingEvents: SharedFlow<VideoRecordEvent>
 
     fun stopRecording()
+    fun pauseRecording()
+    fun resumeRecording()
 }
