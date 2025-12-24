@@ -1,9 +1,12 @@
 package arg.adegtiarev.cameracompose.data
 
+import android.content.ContentValues
 import android.content.Context
+import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -26,17 +29,22 @@ class CameraManager @Inject constructor(private val context: Context) : CameraRe
     override val surfaceRequest = _surfaceRequest.asStateFlow()
 
     override suspend fun bindCamera(lifecycleOwner: LifecycleOwner) {
+        // Get the camera provider
         val provider = getCameraProvider()
 
-        // 1. Setup Preview use case
+        // Setup Preview use case
         val preview = Preview.Builder().build()
 
-        // 2. This is how we get the SurfaceRequest for Compose
+        imageCapture =
+            ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .build()
+
+        // This is how we get the SurfaceRequest for Compose
         preview.setSurfaceProvider { request ->
             _surfaceRequest.value = request
         }
 
-        // 3. Select back camera as default
+        // Select back camera as default
         val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
         try {
@@ -47,7 +55,7 @@ class CameraManager @Inject constructor(private val context: Context) : CameraRe
             provider.bindToLifecycle(
                 lifecycleOwner,
                 cameraSelector,
-                preview
+                preview, imageCapture
                 // Later we will add imageCapture and videoCapture here
             )
         } catch (e: Exception) {
@@ -65,7 +73,39 @@ class CameraManager @Inject constructor(private val context: Context) : CameraRe
     }
 
     override suspend fun takePhoto() {
-        TODO("Not yet implemented")
+        val imageCapture = imageCapture ?: return
+
+        // 1. Prepare file metadata
+        val name = "CameraCompose_${System.currentTimeMillis()}"
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraCompose-Images")
+        }
+
+        // 2. Create output options
+        val outputOptions = ImageCapture.OutputFileOptions
+            .Builder(
+                context.contentResolver,
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                contentValues
+            ).build()
+
+        // 3. Take picture
+        imageCapture.takePicture(
+            outputOptions,
+            ContextCompat.getMainExecutor(context),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    // We'll think about how to notify the UI in a moment! 📩
+                    Log.d("CameraManager", "Photo saved: ${outputFileResults.savedUri}")
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    Log.e("CameraManager", "Photo capture failed", exception)
+                }
+            }
+        )
     }
 
     override suspend fun recordVideo() {
