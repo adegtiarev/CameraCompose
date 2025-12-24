@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -44,6 +45,15 @@ fun MainScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         viewModel.onBindCamera(lifecycleOwner)
+    }
+
+    // Unbind camera when view is disposed
+    DisposableEffect(lifecycleOwner) {
+        onDispose {
+            // Здесь мы можем вызвать метод остановки записи,
+            // чтобы не оставить «повисших» процессов
+            viewModel.stopRecording()
+        }
     }
 
     // Subscribe to events
