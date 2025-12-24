@@ -49,14 +49,14 @@ kotlin {
 }
 
 dependencies {
-    // Base modules CameraX
+    // Base modules of CameraX
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.video)
     implementation(libs.androidx.camera.view)
 
-    // Special module for Compose!
+    // The special module for Compose!
     implementation(libs.androidx.camera.compose)
 
     // For permissions
@@ -65,6 +65,7 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
