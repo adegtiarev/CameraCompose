@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -88,7 +89,7 @@ fun MainScreen(
                 )
 
                 CaptureButton(
-                    onClick = { viewModel.capturePhoto() },
+                    onClick = { viewModel.onCaptureClick() },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 48.dp)
@@ -119,7 +120,8 @@ fun MainScreen(
 @Composable
 fun CaptureButton(
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    color: Color = Color.White
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -142,14 +144,20 @@ fun CaptureButton(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .border(BorderStroke(4.dp, Color.White), CircleShape)
+                .border(BorderStroke(4.dp, color), CircleShape)
         )
         // Inner circle
         Box(
             modifier = Modifier
                 .size(60.dp)
                 .scale(scale)
-                .background(Color.White, CircleShape)
+                .background(color, CircleShape)
         )
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CaptureButtonPreview() {
+    CaptureButton(color = Color.Red, onClick = {})
 }

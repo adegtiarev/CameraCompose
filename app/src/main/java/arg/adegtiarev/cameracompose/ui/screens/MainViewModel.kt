@@ -94,10 +94,20 @@ class MainViewModel @Inject constructor(
     }
 
     private fun recordVideo() {
-        TODO("Not yet implemented")
+        viewModelScope.launch {
+            try {
+                cameraRepository.recordVideo()
+            } catch (e: Exception) {
+                _events.send(CameraEvent.Toast("Video error: ${e.localizedMessage}"))
+            }
+        }
     }
 
-    fun capturePhoto() {
+    fun stopRecording() {
+        cameraRepository.stopRecording()
+    }
+
+    private fun capturePhoto() {
         viewModelScope.launch {
             try {
                 cameraRepository.takePhoto()
