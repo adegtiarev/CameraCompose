@@ -68,8 +68,8 @@ fun MainScreen(
     // Unbind camera when view is disposed
     DisposableEffect(lifecycleOwner) {
         onDispose {
-            // Здесь мы можем вызвать метод остановки записи,
-            // чтобы не оставить «повисших» процессов
+            // Here we can call the stop recording method,
+            // so as not to leave "hanging" processes
             viewModel.stopRecording()
         }
     }
@@ -121,7 +121,7 @@ fun MainScreen(
                         .padding(bottom = 48.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 1. Переключатель режимов
+                    // 1. Mode switcher
                     Row(
                         modifier = Modifier.padding(bottom = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -132,7 +132,7 @@ fun MainScreen(
                                 text = mode.name,
                                 color = Color.White,
                                 modifier = Modifier
-                                    .alpha(if (isSelected) 1f else 0.5f) // Неактивные режимы полупрозрачные
+                                    .alpha(if (isSelected) 1f else 0.5f) // Inactive modes are semi-transparent
                                     .clickable { viewModel.setCameraMode(mode) }
                             )
                         }
@@ -142,18 +142,18 @@ fun MainScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // 1. Левый балласт для симметрии (вес 1)
+                        // 1. Left ballast for symmetry (weight 1)
                         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            // Здесь пусто, но это место «держит» левый край
+                            // Empty here, but this place "holds" the left edge
                         }
 
-                        // 2. Центр (без веса, фиксированный размер)
+                        // 2. Center (no weight, fixed size)
                         CaptureButton(
                             onClick = { viewModel.onCaptureClick() },
                             color = buttonColor
                         )
 
-                        // 3. Правая часть (вес 1)
+                        // 3. Right part (weight 1)
                         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                             if (uiState.isRecording) {
                                 PauseButton(
@@ -295,8 +295,8 @@ fun RecordTimer(
     isPaused: Boolean,
     modifier: Modifier = Modifier
 ) {
-    // В Compose очень просто сделать мигание через анимацию,
-    // но для начала можно просто менять прозрачность
+    // In Compose it is very easy to make blinking via animation,
+    // but for start we can just change transparency
     val alpha by animateFloatAsState(
         targetValue = if (isPaused) 0.5f else 1f,
         label = "timerAlpha"
@@ -304,7 +304,7 @@ fun RecordTimer(
 
     val minutes = seconds / 60
     val remainingSeconds = seconds % 60
-    // Форматируем строку как 00:00
+    // Format string as 00:00
     val timeText = "%02d:%02d".format(minutes, remainingSeconds)
 
     Text(

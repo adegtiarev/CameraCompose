@@ -129,7 +129,7 @@ class CameraManager @Inject constructor(private val context: Context) : CameraRe
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     override suspend fun recordVideo() {
-        // 1. Если запись уже идет — останавливаем её
+        // 1. If recording is already in progress, stop it
         val recording = currentRecording
         if (recording != null) {
             recording.stop()
@@ -137,7 +137,7 @@ class CameraManager @Inject constructor(private val context: Context) : CameraRe
             return
         }
 
-        // 2. Если записи нет — подготавливаем всё для старта
+        // 2. If there is no recording, prepare everything for start
         val videoCapture = videoCapture ?: return
 
         val name = "Video_${System.currentTimeMillis()}"
@@ -151,7 +151,7 @@ class CameraManager @Inject constructor(private val context: Context) : CameraRe
             .setContentValues(contentValues)
             .build()
 
-        // 3. Запускаем и сохраняем ссылку в currentRecording
+        // 3. Start recording and save the reference to currentRecording
         currentRecording = videoCapture.output
             .prepareRecording(context, outputOptions)
             .withAudioEnabled()

@@ -47,14 +47,14 @@ class MainViewModel @Inject constructor(
                     }
 
                     is VideoRecordEvent.Status -> {
-                        // Переводим наносекунды в секунды
+                        // Convert nanoseconds to seconds
                         val seconds = event.recordingStats.recordedDurationNanos / 1_000_000_000
                         _uiState.update { it.copy(durationSeconds = seconds.toInt()) }
                     }
 
                     is VideoRecordEvent.Finalize -> {
                         _uiState.update { it.copy(isRecording = false, isSaving = true) }
-                        // После завершения можно отправить Toast через наш Channel
+                        // After completion, you can send a Toast via our Channel
                         _events.send(CameraEvent.Toast("Video saved!"))
                         _uiState.update { it.copy(isSaving = false) }
                     }
